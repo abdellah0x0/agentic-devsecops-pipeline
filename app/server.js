@@ -1,7 +1,5 @@
 // ============================================================
-// VULNERABLE APP - DevSecOps Pipeline Testing
-// ⚠️  WARNING: This app contains INTENTIONAL vulnerabilities.
-// ⚠️  DO NOT deploy in production. For research/education only.
+// APP - DevSecOps Pipeline Testing
 // ============================================================
 
 const express = require('express');
@@ -45,13 +43,10 @@ app.get('/', (req, res) => {
 });
 
 // ============================================================
-// VULN 1: SQL INJECTION (CWE-89)
 // Endpoint: POST /login
 // ============================================================
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-
-  // ⚠️ VULNERABLE: String concatenation in SQL query
   const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
 
   db.all(query, (err, rows) => {
@@ -67,13 +62,11 @@ app.post('/login', (req, res) => {
 });
 
 // ============================================================
-// VULN 2: REFLECTED XSS (CWE-79)
 // Endpoint: GET /search?q=
 // ============================================================
 app.get('/search', (req, res) => {
   const query = req.query.q || '';
 
-  // ⚠️ VULNERABLE: User input reflected without escaping
   res.send(`
     <html>
       <body>
@@ -86,13 +79,10 @@ app.get('/search', (req, res) => {
 });
 
 // ============================================================
-// VULN 3: PATH TRAVERSAL (CWE-22)
 // Endpoint: GET /file?name=
 // ============================================================
 app.get('/file', (req, res) => {
   const filename = req.query.name || 'readme.txt';
-
-  // ⚠️ VULNERABLE: No path sanitization
   const filePath = path.join(__dirname, 'public', filename);
 
   fs.readFile(filePath, 'utf8', (err, data) => {
@@ -104,13 +94,11 @@ app.get('/file', (req, res) => {
 });
 
 // ============================================================
-// VULN 4: COMMAND INJECTION / RCE (CWE-78)
 // Endpoint: GET /ping?host=
 // ============================================================
 app.get('/ping', (req, res) => {
   const host = req.query.host || 'localhost';
 
-  // ⚠️ VULNERABLE: User input passed to shell command
   const command = `ping -c 1 ${host}`;
 
   exec(command, (err, stdout, stderr) => {
@@ -125,6 +113,5 @@ app.get('/ping', (req, res) => {
 // Start server
 // ============================================================
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🔥 Vulnerable app running on http://0.0.0.0:${PORT}`);
-  console.log(`⚠️  4 intentional vulnerabilities active`);
+  console.log(`app running on http://0.0.0.0:${PORT}`);
 });
