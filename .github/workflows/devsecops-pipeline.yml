@@ -1,4 +1,4 @@
-name: DevSecOps Pipeline - Juice Shop
+name: DevSecOps Pipeline - Vulnerable App
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  IMAGE_NAME: juice-shop
+  IMAGE_NAME: vulnerable-app
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -27,18 +27,18 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./juice-shop-app
-          file: ./juice-shop-app/Dockerfile
+          context: ./app
+          file: ./app/Dockerfile
           tags: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           push: false
           load: true
-          outputs: type=docker,dest=/tmp/juice-shop-image.tar
+          outputs: type=docker,dest=/tmp/app.tar
 
       - name: Upload image as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: juice-shop-image
-          path: /tmp/juice-shop-image.tar
+          name: app-image
+          path: /tmp/app.tar
           retention-days: 1
 
   # ============================================
