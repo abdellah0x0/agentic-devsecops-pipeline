@@ -51,7 +51,7 @@ jobs:
   # ============================================
   exploit-gate:
     name: AI Exploit Gate
-    needs: sonarcloud-scan
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
