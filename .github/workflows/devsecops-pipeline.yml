@@ -105,7 +105,7 @@ jobs:
           echo "Waiting for app to be ready..."
           for i in {1..30}; do
             if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ App is ready"
+              echo " App is ready"
               break
             fi
             sleep 2
@@ -121,7 +121,7 @@ jobs:
       # ----- 9. Run AI Exploit Agent -----
       - name: Run Exploit Agent
         env:
-          # Auth Claude Code (OAuth Pro)
+          # Auth Claude Code 
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           
           # SonarCloud
@@ -141,12 +141,12 @@ jobs:
         if: always()
         run: |
           if [ -f ./output/report.json ]; then
-            echo "## 🤖 AI Exploit Gate Report" >> $GITHUB_STEP_SUMMARY
+            echo "##  AI Exploit Gate Report" >> $GITHUB_STEP_SUMMARY
             echo '```json' >> $GITHUB_STEP_SUMMARY
             cat ./output/report.json >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ No report file generated" >> $GITHUB_STEP_SUMMARY
+            echo " No report file generated" >> $GITHUB_STEP_SUMMARY
           fi
 
       # ----- 11. Upload report as artifact -----
