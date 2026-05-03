@@ -1,4 +1,4 @@
-name: DevSecOps Pipeline - Vulnerable App
+name: DevSecOps Pipeline - Detection
 
 on:
   push:
@@ -42,15 +42,10 @@ jobs:
           retention-days: 1
 
   # ============================================
-  # JOB 2 : SonarCloud Scan + Quality Gate
+  # JOB 2 : SonarCloud Scan
   # ============================================
- 
-
-  # ============================================
-  # JOB 3 : AI Exploit Gate
-  # ============================================
-  exploit-gate:
-    name: AI Exploit Gate
+  sonarcloud-scan:
+    name: SonarCloud Security Scan
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -59,98 +54,84 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ----- 1. Setup Node.js (required for Claude Code CLI) -----
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=false
+
+  # ============================================
+  # JOB 3 : AI Exploit Gate
+  # ============================================
+  exploit-gate:
+    name: AI Exploit Gate
+    needs: sonarcloud-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # ----- 2. Install Claude Code CLI -----
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
-      # ----- 3. Setup Python -----
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      # ----- 4. Install Python dependencies -----
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r exploit-gate/requirements.txt
 
-      # ----- 5. Download the app image built in JOB 1 -----
       - name: Download app image
         uses: actions/download-artifact@v4
         with:
           name: app-image
           path: /tmp/
 
-      # ----- 6. Load the Docker image -----
       - name: Load Docker image
         run: docker load -i /tmp/app.tar
 
-      # ----- 7. Spawn ephemeral sandbox -----
       - name: Spawn vulnerable app sandbox
         run: |
           docker run -d \
             --name vuln-sandbox \
             -p 3000:3000 \
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          
-          # Wait for app to be ready
-          echo "Waiting for app to be ready..."
+
           for i in {1..30}; do
             if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo " App is ready"
+              echo "App is ready"
               break
             fi
             sleep 2
           done
-          
-          # Verify
-          curl -s http://localhost:3000 | head -5
 
-      # ----- 8. Create output directory -----
       - name: Create output directory
         run: mkdir -p output
 
-      # ----- 9. Run AI Exploit Agent -----
-      - name: Run Exploit Agent
+      - name: Run AI Exploit Agent
         env:
-          # Auth Claude Code 
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          
-          # SonarCloud
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: abdellah0x0_agentic-devsecops-pipeline
           SONAR_HOST: https://sonarcloud.io
-          
-          # Target
           TARGET_URL: http://localhost:3000
-          
-          # Output
           OUTPUT_DIR: ./output
         run: python exploit-gate/main.py
 
-      # ----- 10. Display report in GitHub UI -----
-      - name: Display report summary
-        if: always()
-        run: |
-          if [ -f ./output/report.json ]; then
-            echo "##  AI Exploit Gate Report" >> $GITHUB_STEP_SUMMARY
-            echo '```json' >> $GITHUB_STEP_SUMMARY
-            cat ./output/report.json >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          else
-            echo " No report file generated" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      # ----- 11. Upload report as artifact -----
-      - name: Upload report
+      - name: Upload report as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -158,7 +139,58 @@ jobs:
           path: ./output/
           retention-days: 30
 
-      # ----- 12. Cleanup sandbox -----
+      - name: Comment results on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const report = JSON.parse(fs.readFileSync('./output/report.json'));
+              const summary = report.summary || {};
+              const exploited = summary.exploited_count || 0;
+              const total = summary.total_findings || 0;
+              const fp = summary.false_positive_count || 0;
+              
+              let status, statusEmoji;
+              if (exploited === 0) {
+                status = '**Safe to merge**';
+                statusEmoji = '✅';
+              } else {
+                status = '**Vulnerabilities still exploitable**';
+                statusEmoji = '🔴';
+              }
+              
+              const findingsTable = (report.findings || []).map(f => 
+                `| ${f.vulnerability_type} | ${f.endpoint} | ${f.exploited ? '🔴 Exploited' : '✅ Safe'} |`
+              ).join('\n');
+              
+              const body = `## ${statusEmoji} AI Exploit Gate Re-validation
+              
+              ${status}
+              
+              **Summary:**
+              - Total findings: ${total}
+              - Exploited: ${exploited}
+              - False positives: ${fp}
+              
+              **Details:**
+              | Vulnerability | Endpoint | Status |
+              |---------------|----------|--------|
+              ${findingsTable}
+              
+              ${exploited === 0 ? 'The fix successfully addressed all vulnerabilities. You can safely merge this PR.' : 'Some vulnerabilities are still exploitable. Please review the fix.'}`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.payload.pull_request.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } catch (e) {
+              console.log('Could not post comment:', e.message);
+            }
+
       - name: Stop sandbox
         if: always()
         run: |
@@ -166,5 +198,42 @@ jobs:
           docker rm vuln-sandbox || true
 
   # ============================================
-  # [SLOT FUTUR : Deploy to Render]
+  # JOB 4 : Publish Dashboard to GitHub Pages
   # ============================================
+  publish-dashboard:
+    name: Publish Dashboard
+    needs: exploit-gate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download exploit report
+        uses: actions/download-artifact@v4
+        with:
+          name: exploit-report
+          path: ./output/
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate dashboard HTML
+        run: |
+          mkdir -p dashboard
+          python dashboard/dashboard.py \
+            --report output/report.json \
+            --output dashboard/index.html \
+            --repo ${{ github.repository }} \
+            --commit ${{ github.sha }}
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dashboard
+          force_orphan: true
