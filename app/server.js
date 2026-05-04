@@ -4,9 +4,11 @@
 
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const app = express();
 const PORT = 3000;
@@ -47,9 +49,9 @@ app.get('/', (req, res) => {
 // ============================================================
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+  const query = 'SELECT * FROM users WHERE username = ? AND password = ?';
 
-  db.all(query, (err, rows) => {
+  db.all(query, [username, password], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message, query: query });
     }
@@ -71,7 +73,7 @@ app.get('/search', (req, res) => {
     <html>
       <body>
         <h1>Search Results</h1>
-        <p>You searched for: ${query}</p>
+        <p>You searched for: ${escapeHtml(query)}</p>
         <p>No results found.</p>
       </body>
     </html>
@@ -83,7 +85,9 @@ app.get('/search', (req, res) => {
 // ============================================================
 app.get('/file', (req, res) => {
   const filename = req.query.name || 'readme.txt';
-  const filePath = path.join(__dirname, 'public', filename);
+  const safeName = path.basename(filename);
+  if (safeName !== filename) return res.status(400).json({ error: 'Invalid filename' });
+  const filePath = path.join(__dirname, 'public', safeName);
 
   fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
@@ -99,11 +103,11 @@ app.get('/file', (req, res) => {
 app.get('/ping', (req, res) => {
   const host = req.query.host || 'localhost';
 
-  const command = `ping -c 1 ${host}`;
+  if (!/^[a-zA-Z0-9.-]+$/.test(host)) return res.status(400).json({ error: 'Invalid host' });
 
-  exec(command, (err, stdout, stderr) => {
+  execFile('ping', ['-c', '1', host], (err, stdout, stderr) => {
     if (err) {
-      return res.status(500).json({ error: stderr, command: command });
+      return res.status(500).json({ error: stderr });
     }
     res.type('text/plain').send(stdout);
   });
