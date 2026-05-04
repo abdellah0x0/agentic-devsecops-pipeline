@@ -1,5 +1,7 @@
 # Agentic-DevSecOps-Pipeline
 
+**Agentic DevSecOps Pipeline** is a CI/CD security workflow that uses AI agents to validate SAST findings through actual exploitation, then automatically generates secure code fixes via Pull Requests. Built on GitHub Actions, SonarCloud, and the Claude Agent SDK, it transforms vulnerability prioritization from probabilistic guessing to deterministic proof-by-exploitation, while keeping a human-in-the-loop review step before any code is merged.
+
 
 ## Components
  
@@ -23,6 +25,8 @@ Triggered when a GitHub issue receives the `auto-fix` label. Runs the AI Fix Age
 2. Applies secure patterns from the OWASP skill
 3. Pushes changes to a new branch
 4. Opens a Pull Request
+
+
 ### AI Agents
  
 | Agent | Role | Skills used |
@@ -135,19 +139,29 @@ Pipeline 1 runs automatically, results visible at:
 - **Actions tab** → workflow logs
 - **Artifacts** → `report.json`
 - **Dashboard** → `https://YOUR_USERNAME.github.io/YOUR_REPO/`
+<img width="1919" height="864" alt="image" src="https://github.com/user-attachments/assets/0f3c3bdb-290b-4561-9413-2553e550a116" />
+
 ### Trigger auto-fix
  
 1. Open the published dashboard
 2. Click **"Generate AI Fix for All Vulnerabilities"**
 3. GitHub opens an issue creation page (pre-filled)
 4. Submit the issue
-5. Pipeline 2 starts automatically and creates a PR
+<img width="1919" height="657" alt="image" src="https://github.com/user-attachments/assets/86ea12a1-913d-439b-bc91-efee5c8d8206" />
+
+6. Pipeline 2 starts automatically and creates a PR
+<img width="1888" height="560" alt="image" src="https://github.com/user-attachments/assets/7371ef19-f4ba-4985-974d-8c88d4c56a60" />
+
+
+
 ### Review and merge
  
 1. Open the generated Pull Request
-2. Review the code diff
-3. Wait for Pipeline 1 to re-validate (comment will appear)
-4. Merge if validation passes
+<img width="1916" height="866" alt="image" src="https://github.com/user-attachments/assets/9ba9c25e-223c-42da-894c-430d53686979" />
+3. Review the code diff
+<img width="1887" height="863" alt="image" src="https://github.com/user-attachments/assets/73cf0790-743b-4598-8d44-7cc70009bf10" />
+4. Wait for Pipeline 1 to re-validate (comment will appear)
+5. Merge if validation passes
 ---
  
 ## Project Structure
