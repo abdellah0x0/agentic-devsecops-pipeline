@@ -5,9 +5,6 @@ on:
     types: [opened, labeled]
 
 jobs:
-  # ============================================
-  # JOB 1: Detect intent and ensure label
-  # ============================================
   detect-intent:
     name: Detect Auto-Fix Intent
     runs-on: ubuntu-latest
@@ -41,7 +38,6 @@ jobs:
             console.log(`Body match: ${bodyMatch}`);
             console.log(`Should fix: ${shouldFix}`);
             
-            // If detected via title/body but label is missing, add it
             if (shouldFix && !hasLabel) {
               console.log('Adding auto-fix label...');
               try {
@@ -75,9 +71,6 @@ jobs:
             
             core.setOutput('should_fix', shouldFix);
 
-  # ============================================
-  # JOB 2: Run the fix agent
-  # ============================================
   fix:
     name: Run AI Fix Agent
     needs: detect-intent
@@ -128,10 +121,6 @@ jobs:
           git config user.name "AI Fix Agent"
           git config user.email "ai-agent@noreply.github.com"
 
-      # ============================================
-      # CRITICAL: Cleanup any existing branch/PR before creating new one
-      # This fixes the "non-fast-forward" error
-      # ============================================
       - name: Cleanup any existing branch and PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -150,11 +139,18 @@ jobs:
             echo "Deleting existing remote branch: $BRANCH"
             git push origin --delete "$BRANCH" || true
           fi
+          
+          # Fetch latest state to avoid stale refs
+          git fetch origin --prune
 
       - name: Create fix branch
         id: branch
         run: |
           BRANCH="auto-fix/issue-${{ github.event.issue.number }}"
+          # Make sure we're on latest main
+          git checkout main
+          git pull origin main
+          # Create fresh branch from main
           git checkout -b "$BRANCH"
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
@@ -182,15 +178,16 @@ jobs:
             echo "Agent made changes, will create PR"
           fi
 
-      - name: Commit and force-push changes
+      - name: Commit and push changes
         if: steps.changes.outputs.has_changes == 'true'
         run: |
           git commit -m "AI Fix for issue #${{ github.event.issue.number }}
 
           Auto-generated security fix by Claude Agent.
           Closes #${{ github.event.issue.number }}"
-          # Use --force-with-lease as safety net for race conditions
-          git push --force-with-lease origin ${{ steps.branch.outputs.branch }}
+          # Use --force (not --force-with-lease) since we control the branch fully
+          # We just deleted it and recreated it
+          git push --force origin ${{ steps.branch.outputs.branch }}
 
       - name: Ensure PR labels exist
         if: steps.changes.outputs.has_changes == 'true'
@@ -262,5 +259,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'AI Fix Agent ran but did not make any changes. Manual review needed.'
+              body: '⚠️ AI Fix Agent ran but did not make any changes. Manual review needed.'
             })
